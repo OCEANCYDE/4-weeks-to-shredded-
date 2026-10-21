@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meal Plan">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>4-Week Meal Plan</title>
+<style>
+:root {
+  --desk: #008080; --desk-img: none; --glow: none;
+  --face: #c0c0c0; --hi: #ffffff; --sh: #808080; --dk: #000000;
+  --bar: linear-gradient(90deg, #000080, #1084d0);
+  --accent: #000080; --panel: #ffffff; --text: #000000; --muted: #404040;
+  --sel-bg: #000080; --sel-fg: #ffffff;
+  --marq-bg: #000080; --marq-fg: #ffff00;
+  --progress: #000080; --done: #808080; --line: #808080;
+  --font: Tahoma, "MS Sans Serif", Verdana, Arial, sans-serif;
+}
+body.dark {
+  --desk: #120428;
+  --desk-img: linear-gradient(rgba(0,240,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,43,214,.08) 1px, transparent 1px);
+  --glow: 0 0 26px rgba(255,43,214,.35);
+  --face: #1e0f3a; --hi: #7a4fc0; --sh: #0a0218; --dk: #000000;
+  --bar: linear-gradient(90deg, #ff2bd6, #6a00ff 60%, #00f0ff);
+  --accent: #00f0ff; --panel: #0d0520; --text: #f1e9ff; --muted: #b9a6e6;
+  --sel-bg: #00f0ff; --sel-fg: #0d0520;
+  --marq-bg: #000000; --marq-fg: #ff2bd6;
+  --progress: #00f0ff; --done: #6e5aa0; --line: #5b3c8f;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+body {
+  font-family: var(--font); font-size: 15px; line-height: 1.4; color: var(--text);
+  background-color: var(--desk); background-image: var(--desk-img); background-size: 24px 24px;
+  padding-bottom: calc(64px + env(safe-area-inset-bottom));
+}
+.desk { padding: 0; }
+@media (min-width: 720px) { .desk { padding: 24px 0 90px; } }
+
+.window {
+  background: var(--face); max-width: 760px; margin: 0 auto; padding: 4px;
+  border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset 1px 1px 0 var(--face), var(--glow);
+}
+.titlebar {
+  background: var(--bar); color: #fff; display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 4px 4px 6px; min-height: 30px;
+}
+.titlebar .title { font-weight: bold; font-size: 14px; text-shadow: 1px 1px 0 rgba(0,0,0,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tbtns { display: flex; gap: 3px; flex: 0 0 auto; }
+.tbtns .tb { width: 24px; min-height: 22px; height: 22px; padding: 0; font-weight: bold; font-size: 12px; line-height: 1; }
+
+.menubar { display: flex; align-items: center; gap: 2px; padding: 3px 2px; border-bottom: 1px solid var(--sh); font-size: 14px; }
+.menubar span { padding: 2px 8px; }
+.darkswitch { margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 2px 6px; cursor: pointer; }
+.darkswitch input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+
+.marquee { background: var(--marq-bg); color: var(--marq-fg); overflow: hidden; white-space: nowrap; font-weight: bold; font-size: 13px; padding: 4px 0; margin: 4px 0; border: 2px inset var(--face); }
+.marquee-track { display: inline-block; animation: marq 26s linear infinite; }
+@keyframes marq { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; padding-left: 12px; } }
+
+button {
+  font: inherit; font-size: 14px; color: var(--text); background: var(--face); cursor: pointer;
+  border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset -1px -1px 0 var(--sh); min-height: 40px; padding: 6px 10px;
+}
+button:active { border-color: var(--dk) var(--hi) var(--hi) var(--dk); box-shadow: inset 1px 1px 0 var(--sh); }
+button.active { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--dk) var(--hi) var(--hi) var(--dk); box-shadow: inset 1px 1px 0 rgba(0,0,0,.4); font-weight: bold; }
+
+header { padding: 8px 6px 0; }
+.weeks { display: flex; gap: 6px; }
+.weeks button { flex: 1; font-weight: bold; }
+
+main {
+  background: var(--panel); margin: 8px 4px; padding: 12px; min-height: 60vh;
+  border: 2px solid; border-color: var(--sh) var(--hi) var(--hi) var(--sh);
+}
+.hidden { display: none !important; }
+h2 {
+  font-size: 19px; margin: 2px 0 10px; color: var(--accent);
+  background: var(--bar); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+h3.section { font-size: 15px; color: var(--panel); background: var(--accent); display: inline-block; padding: 2px 8px; margin: 18px 0 8px; }
+.targets {
+  background: var(--face); color: var(--text); font-size: 13px; padding: 8px 10px; margin-bottom: 10px;
+  border: 2px solid; border-color: var(--sh) var(--hi) var(--hi) var(--sh);
+}
+.note { font-size: 13px; color: var(--muted); margin: 6px 0; }
+
+.progress {
+  background: var(--face); padding: 8px 10px; margin: 12px 0; font-size: 14px;
+  border: 2px solid; border-color: var(--sh) var(--hi) var(--hi) var(--sh);
+}
+.progress .bar { height: 16px; margin-top: 6px; background: var(--panel); border: 1px solid var(--sh); padding: 2px; }
+.progress .bar div { height: 100%; background: repeating-linear-gradient(90deg, var(--progress) 0 10px, transparent 10px 12px); transition: width .25s; }
+
+.daychips { display: flex; gap: 6px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
+.daychips::-webkit-scrollbar { display: none; }
+.daychips button { flex: 0 0 auto; min-width: 58px; }
+
+.meal {
+  position: relative; border: 2px groove var(--line); padding: 12px 12px 6px; margin: 16px 0 10px;
+}
+.meal .label {
+  position: absolute; top: -11px; left: 10px; background: var(--panel); padding: 0 6px;
+  font-size: 12px; font-weight: bold; letter-spacing: .06em; text-transform: uppercase; color: var(--accent);
+}
+.item { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.item input[type=checkbox] { flex: 0 0 22px; width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--accent); }
+.item span { font-size: 16px; }
+.item.done span { text-decoration: line-through; color: var(--done); }
+.meal .item { padding: 0 0 6px; }
+.meal.done .text { text-decoration: line-through; color: var(--done); }
+
+.btn { width: 100%; margin-top: 12px; }
+.cat { margin-bottom: 12px; }
+.cat h3 { font-size: 13px; color: var(--panel); background: var(--accent); display: inline-block; padding: 2px 8px; margin: 14px 0 4px; }
+
+.search {
+  width: 100%; min-height: 40px; padding: 6px 10px; font: inherit; font-size: 16px; color: var(--text); background: var(--panel);
+  border: 2px solid; border-color: var(--sh) var(--hi) var(--hi) var(--sh); border-radius: 0; margin-bottom: 8px;
+}
+
+.card {
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--sh) var(--sh) var(--hi);
+  padding: 0 0 10px; margin: 12px 0; font-size: 14px; color: var(--text);
+}
+.card h3 {
+  background: var(--bar); color: #fff; margin: 0 0 6px; padding: 4px 8px; font-size: 14px; text-shadow: 1px 1px 0 rgba(0,0,0,.45);
+}
+.card > *:not(h3) { margin-left: 10px; margin-right: 10px; }
+.card .meta { color: var(--muted); font-size: 12px; margin-top: 0; margin-bottom: 4px; }
+.card h4 { margin: 8px 10px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+.card ul, .card ol { margin: 0 10px 4px 26px; padding: 0; }
+.card li { margin-bottom: 2px; }
+.card .var { font-style: italic; color: var(--muted); margin-top: 6px; }
+
+table.snacks { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 6px; }
+table.snacks td { border-bottom: 1px dotted var(--line); padding: 8px 4px; vertical-align: top; }
+table.snacks td:first-child { font-weight: bold; width: 45%; }
+
+.footer { text-align: center; font-size: 11px; color: var(--muted); margin: 6px 0 10px; }
+
+.taskbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
+  display: flex; align-items: center; gap: 4px; background: var(--face);
+  border-top: 2px solid var(--hi); padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+}
+.start { font-weight: bold; min-width: 70px; display: flex; align-items: center; gap: 6px; }
+.start::before {
+  content: ""; width: 14px; height: 14px; background: conic-gradient(#ff2bd6 0 25%, #00f0ff 0 50%, #b6ff00 0 75%, #ffea00 0);
+  border: 1px solid var(--dk);
+}
+.tabs { display: flex; gap: 4px; flex: 1; min-width: 0; }
+.tabs button { flex: 1; min-height: 40px; font-size: 13px; padding: 4px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clock {
+  font-size: 13px; padding: 5px 8px; white-space: nowrap;
+  border: 1px solid; border-color: var(--sh) var(--hi) var(--hi) var(--sh);
+}
+@media (max-width: 380px) { .clock { display: none; } .start { min-width: 56px; } .start::before { display: none; } }
+</style>
+</head>
+<body>
+<div class="desk">
+<div class="window">
+  <div class="titlebar">
+    <span class="title">4-Week Heart-Healthy Meal Plan</span>
+    <span class="tbtns"><button class="tb" type="button" aria-label="Minimize">_</button><button class="tb" type="button" aria-label="Maximize">&#9633;</button><button class="tb" type="button" aria-label="Close">&times;</button></span>
+  </div>
+  <div class="menubar">
+    <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+    <label class="darkswitch"><input type="checkbox" id="darkToggle"> Dark mode</label>
+  </div>
+  <div class="marquee"><div class="marquee-track">&#9733; EAT THE RAINBOW &#9733; 4 WEEKS OF WHOLE FOODS &#9733; SHOP FRESH, COOK SIMPLE &#9733; TICK OFF YOUR MEALS &#9733; EAT THE RAINBOW &#9733; 4 WEEKS OF WHOLE FOODS &#9733;</div></div>
+  <header><div class="weeks" id="weekButtons"></div></header>
+
+  <main>
+    <section id="tab-today">
+      <h2 id="todayTitle">Today</h2>
+      <div class="note" id="todayNote"></div>
+      <div id="todayMeals"></div>
+      <div class="progress" id="todayProgress"></div>
+    </section>
+
+    <section id="tab-week" class="hidden">
+      <h2>This Week</h2>
+      <div class="targets">Target about 1,900 to 2,100 calories a day and under about 1,500 to 2,300 mg of sodium. Tick each meal as you eat it.</div>
+      <div class="daychips" id="dayChips"></div>
+      <div id="weekMeals"></div>
+      <div class="progress" id="weekProgress"></div>
+      <button class="btn" id="clearWeekMeals" type="button">Clear this week's checkmarks</button>
+    </section>
+
+    <section id="tab-shop" class="hidden">
+      <h2 id="shopTitle">Shopping List</h2>
+      <div class="progress" id="shopProgress"></div>
+      <div id="shopList"></div>
+      <button class="btn" id="clearShop" type="button">Clear this week's checkmarks</button>
+    </section>
+
+    <section id="tab-recipes" class="hidden">
+      <h2>Recipes</h2>
+      <input class="search" id="recipeSearch" type="search" placeholder="Search recipes (e.g., salmon, oats)">
+      <div id="recipeList"></div>
+      <h3 class="section">Snack Portions</h3>
+      <table class="snacks" id="snackTable"></table>
+    </section>
+  </main>
+  <div class="footer">Best viewed at 800 x 600</div>
+</div>
+</div>
+
+<div class="taskbar">
+  <button class="start" type="button">Start</button>
+  <nav class="tabs">
+    <button data-tab="today" class="active" type="button">Today</button>
+    <button data-tab="week" type="button">Week</button>
+    <button data-tab="shop" type="button">Shopping</button>
+    <button data-tab="recipes" type="button">Recipes</button>
+  </nav>
+  <span class="clock" id="clock"></span>
+</div>
+
+<script>
+const PLAN = {"weeks": [{"n": 1, "days": [{"day": "Mon", "B": "Veggie egg scramble (2 eggs + 2 egg whites, spinach, tomato, onion, 1 tsp olive oil) with 1 slice whole-grain toast", "L": "Grilled chicken spinach salad with chickpeas, tomato, cucumber, olive oil and vinegar", "S": "Apple with 1 tbsp natural peanut butter", "D": "Baked salmon, roasted asparagus, 1/2 cup brown rice, ground flax over vegetables"}, {"day": "Tue", "B": "Overnight oats (1/2 cup rolled oats, 1 cup low-fat milk, 1 tbsp ground flax, berries, cinnamon)", "L": "Lentil and vegetable soup (low-sodium) with side salad and 1 tsp olive oil", "S": "Baby carrots with 2 tbsp hummus", "D": "Herb-roasted chicken breast, roasted broccoli and carrots, 1/2 cup quinoa"}, {"day": "Wed", "B": "Plain nonfat Greek yogurt bowl (1 cup) with berries, 1/4 cup oats, 1 tbsp walnuts", "L": "Tuna salad (no-salt-added tuna) on 2 slices whole-grain bread with lettuce, tomato, and an apple", "S": "1 cup berries with 1/3 cup Greek yogurt", "D": "Baked cod in tomato, garlic, and oregano sauce, green beans, 1/2 cup whole-grain pasta"}, {"day": "Thu", "B": "Egg white and pepper omelet with 1 oz feta and 1 slice whole-grain toast", "L": "Black bean and brown rice bowl with peppers, salsa, 1/4 avocado, and lime", "S": "1 oz almonds with a small orange", "D": "Lean turkey and bean chili (no-salt-added tomatoes), topped with 1 tbsp plain Greek yogurt"}, {"day": "Fri", "B": "Berry-spinach smoothie (1 cup low-fat milk, 1 cup spinach, 1/2 banana, berries, 1 tbsp flax) with 2 hard-boiled eggs", "L": "Turkey and hummus whole-grain wrap with spinach, peppers, and sprouts, plus an apple", "S": "2 hard-boiled eggs with cucumber slices", "D": "Shrimp and vegetable skewers (zucchini, peppers, onion) with 1/2 cup wild rice"}, {"day": "Sat", "B": "Apple-cinnamon oatmeal (1/2 cup oats cooked in low-fat milk, chopped apple, 1 tbsp natural peanut butter)", "L": "Chicken stir-fry with broccoli, snap peas, red pepper, garlic, ginger, 1 tbsp low-sodium soy sauce, 1/2 cup brown rice", "S": "Pear with 1 part-skim string cheese", "D": "Chicken fajita bowl with peppers, onions, black beans, brown rice, and salsa"}, {"day": "Sun", "B": "Veggie egg muffins (2 muffins with egg, spinach, bell pepper, onion) with 1 orange", "L": "Chickpea and cucumber salad with 1 oz feta, tomato, oregano, lemon, and 1 whole-grain pita", "S": "1 cup unsalted edamame with bell pepper strips", "D": "Mushroom and lentil stew (low-sodium broth) with 1 small baked potato"}]}, {"n": 2, "days": [{"day": "Mon", "B": "Savory oatmeal (1/2 cup oats) topped with a poached egg, sauteed spinach, tomato, and black pepper", "L": "Quinoa tabbouleh with grilled chicken, parsley, tomato, cucumber, and lemon", "S": "Celery sticks with 2 tbsp almond butter", "D": "Greek chicken plate with cucumber and tomato salad, 1/2 cup quinoa, and 1 tbsp tzatziki"}, {"day": "Tue", "B": "Whole-grain wrap breakfast burrito (2 scrambled eggs, spinach, 1/4 cup black beans, salsa)", "L": "Vegetable and white bean soup (kale, cannellini beans, low-sodium broth) with 1 slice whole-grain bread", "S": "1 cup berries with 1/3 cup Greek yogurt", "D": "Cod and vegetable foil packets (zucchini, tomato, onion, 1 tsp olive oil) with 1/2 cup farro"}, {"day": "Wed", "B": "Cottage cheese bowl (3/4 cup low-sodium cottage cheese, sliced peaches, 1 tbsp walnuts)", "L": "Shrimp taco bowl with cabbage slaw, black beans, avocado, salsa, and 2 small corn tortillas", "S": "3 cups air-popped popcorn", "D": "Lean turkey meatballs (oats, egg white, herbs) with no-salt-added marinara over whole-grain pasta and a side salad"}, {"day": "Thu", "B": "Chia pudding (3 tbsp chia, 1 cup low-fat milk, berries, cinnamon)", "L": "Salmon salad (no-salt-added canned salmon) over greens with cherry tomatoes, cucumber, and 1 tsp olive oil", "S": "1 small orange with 1 oz almonds", "D": "Salmon poke-style bowl with brown rice, cucumber, 1/2 cup edamame, 1/4 avocado, and 1 tsp low-sodium soy sauce"}, {"day": "Fri", "B": "Peanut-banana toast (1 slice whole-grain toast, 1 tbsp peanut butter, 1/2 banana) with 2 boiled eggs", "L": "Lentil and spinach salad with carrots, red onion, 2 hard-boiled eggs, and balsamic vinegar", "S": "Baby carrots with 2 tbsp hummus", "D": "Tofu and vegetable stir-fry (broccoli, peppers, garlic, ginger, sesame oil) with 1/2 cup brown rice"}, {"day": "Sat", "B": "Pear and walnut oats (1/2 cup oats, diced pear, 1 tbsp walnuts, cinnamon)", "L": "Turkey and hummus pita with cucumber, peppers, sprouts, and mustard, plus an apple", "S": "1 cup low-fat milk with 1/2 cup berries", "D": "Chicken and white bean soup (kale, carrots, low-sodium broth) with 1 slice whole-grain bread"}, {"day": "Sun", "B": "Tomato and feta toast (1 slice whole-grain toast, 1/2 tomato, 1 oz feta, 2 scrambled egg whites, basil)", "L": "Chicken Caesar-style salad with romaine, 2 tbsp light Caesar dressing, 1 tbsp parmesan, and 1/4 cup whole-grain croutons", "S": "1 pear with 1 part-skim string cheese", "D": "Baked tilapia with lemon and dill, roasted Brussels sprouts, and 1/2 cup sweet potato"}]}, {"n": 3, "days": [{"day": "Mon", "B": "Egg and vegetable frittata square (2 eggs + 2 egg whites, peppers, onion, spinach) with an apple", "L": "Chicken and spinach whole-grain wrap with hummus, shredded carrot, and cucumber", "S": "1 cup berries with 1/3 cup Greek yogurt", "D": "Baked salmon with lemon and dill, green beans, and 1/2 cup wild rice"}, {"day": "Tue", "B": "Blueberry overnight oats (1/2 cup oats, low-fat milk, ground flax, blueberries, 1 tbsp walnuts)", "L": "Lentil soup (low-sodium) with a spinach and tomato side salad", "S": "1 oz walnuts with an apple", "D": "Chicken breast with rosemary and garlic, roasted carrots and small potatoes"}, {"day": "Wed", "B": "Greek yogurt parfait (1 cup plain nonfat Greek yogurt, oats, berries, cinnamon)", "L": "Chicken burrito bowl with brown rice, black beans, no-salt-added corn, salsa, and lime", "S": "Cucumber slices with 2 tbsp hummus", "D": "Shrimp and broccoli stir-fry with brown rice and 1 tbsp low-sodium soy sauce"}, {"day": "Thu", "B": "Smoothie (low-fat milk, spinach, banana, mango, 1 tbsp flax) with 2 hard-boiled eggs", "L": "Egg salad (2 eggs mashed with plain Greek yogurt, mustard, celery) on 2 slices whole-grain bread with cucumber", "S": "2 hard-boiled eggs", "D": "Black bean and vegetable enchilada bake (corn tortillas, no-salt-added enchilada sauce, peppers, 1 oz low-fat cheese)"}, {"day": "Fri", "B": "1 slice whole-grain toast with 1/4 avocado, 2 scrambled eggs, and tomato", "L": "Salmon and quinoa salad with cucumber, tomato, fresh herbs, and lemon", "S": "Pear with 1 part-skim string cheese", "D": "Cod with mango salsa (mango, red onion, lime, cilantro), 1/2 cup quinoa, and asparagus"}, {"day": "Sat", "B": "Cinnamon oats with 1 cup berries and 1 tbsp chopped almonds", "L": "Mediterranean chickpea bowl with bell pepper, cucumber, 1 oz feta, olive oil, and 1/2 cup brown rice", "S": "Carrots with 2 tbsp almond butter", "D": "Lean turkey burgers (4 oz, no-salt seasoning) on whole-grain bun with lettuce and tomato, with sweet potato wedges"}, {"day": "Sun", "B": "Veggie egg scramble with peppers and mushrooms, 1 slice whole-grain toast", "L": "Chicken, barley, and vegetable soup (low-sodium broth) with an apple", "S": "3 cups air-popped popcorn", "D": "Lentil and mushroom bolognese over whole-grain pasta, with a side salad"}]}, {"n": 4, "days": [{"day": "Mon", "B": "Overnight oats with diced pear, cinnamon, and 1 tbsp walnuts", "L": "Grilled chicken and spinach salad with white beans, tomato, olive oil, and lemon", "S": "Apple with 1 tbsp natural peanut butter", "D": "Herb-roasted chicken breast, roasted broccoli, 1/2 cup quinoa"}, {"day": "Tue", "B": "Tomato and feta toast with 2 scrambled egg whites and basil", "L": "Tuna salad (no-salt-added tuna) on whole-grain bread with lettuce, tomato, and an apple", "S": "Celery sticks with 2 tbsp almond butter", "D": "Baked cod with cherry tomatoes, olives, garlic, and 1/2 cup farro"}, {"day": "Wed", "B": "2 egg and vegetable muffins with an orange", "L": "Lentil and quinoa bowl with roasted vegetables and lemon-tahini dressing (2 tbsp tahini)", "S": "1 orange with 1 oz almonds", "D": "Turkey and vegetable stuffed peppers with brown rice and a tomato sauce made from no-salt-added tomatoes"}, {"day": "Thu", "B": "Cottage cheese bowl with pineapple and 1 tbsp almonds", "L": "Turkey and hummus wrap with spinach, peppers, and sprouts, plus a pear", "S": "Cucumber slices with 2 tbsp hummus", "D": "Shrimp tacos on 2 small corn tortillas with cabbage slaw, avocado, and lime"}, {"day": "Fri", "B": "Chia pudding with mixed berries and cinnamon", "L": "Shrimp and avocado salad over greens with corn, cherry tomatoes, and lime", "S": "1 cup plain Greek yogurt with 1 cup berries", "D": "Salmon with ginger-garlic glaze (1 tsp low-sodium soy sauce), bok choy, and 1/2 cup brown rice"}, {"day": "Sat", "B": "Savory oats (1/2 cup oats) with sauteed spinach and a poached egg", "L": "Chicken and vegetable soup (low-sodium broth) with 1 slice whole-grain bread", "S": "1 cup unsalted edamame with bell pepper strips", "D": "Eggplant and chickpea curry (1 tbsp light coconut milk) with 1/2 cup brown rice"}, {"day": "Sun", "B": "Breakfast burrito (whole-grain wrap, 2 eggs, black beans, salsa)", "L": "Chickpea and quinoa salad with cucumber, red onion, 1 oz feta, oregano, and lemon", "S": "3 cups air-popped popcorn", "D": "Grilled chicken and vegetable kebabs (peppers, zucchini, onion) over brown rice, with 1 tbsp tzatziki"}]}], "shopping": [{"n": 1, "cats": [{"name": "Produce", "items": ["Spinach, large bag (about 2 lb)", "Tomatoes, 6", "Yellow onions, 3", "Red onion, 1", "Bell peppers, 4", "Cucumbers, 3", "Asparagus, 1 bunch", "Broccoli, 2 heads", "Carrots, 1 lb plus 1 bag baby carrots", "Green beans, 1 lb", "Zucchini, 2", "Snap peas, 1 small bag", "Mushrooms, 8 oz", "Celery, 1 bunch (for later use)", "Avocado, 1", "Lemons, 3", "Limes, 2", "Apples, 6", "Pears, 1", "Oranges, 3", "Bananas, 2", "Mixed berries, 2 pints (fresh or frozen)", "Fresh parsley, dill, basil, and oregano", "Garlic, 1 head; fresh ginger, small piece", "Small baked potato, 1"]}, {"name": "Protein and Eggs", "items": ["Skinless chicken breast, about 2.5 lb", "Salmon fillet, about 1 lb", "Cod fillet, about 1 lb", "Shrimp, peeled and raw, 1 lb", "Lean ground turkey, 1 lb", "Low-sodium sliced turkey breast, 8 oz", "Eggs, 1 dozen", "Egg whites, 32 oz carton", "Canned tuna, no-salt-added, 2 cans"]}, {"name": "Dairy", "items": ["Plain nonfat Greek yogurt, 32 oz", "Low-fat milk, 1/2 gallon", "Feta cheese, 4 oz", "Part-skim string cheese, 2"]}, {"name": "Grains and Beans", "items": ["Rolled oats, 18 oz container", "Whole-grain bread, 1 loaf", "Whole-grain wraps, 2", "Whole-grain pita, 1", "Whole-grain pasta, 8 oz", "Brown rice, 1 lb", "Quinoa, 12 oz", "Wild rice, 4 oz", "Dry lentils, 1 lb", "Chickpeas, no-salt-added, 2 cans", "Black beans, no-salt-added, 2 cans", "Kidney beans, no-salt-added, 1 can", "Hummus, 1 small tub"]}, {"name": "Pantry and Other", "items": ["No-salt-added diced tomatoes, 2 cans", "No-salt-added tomato sauce, 1 can", "Low-sodium vegetable broth, 32 oz", "Low-sodium soy sauce", "Natural peanut butter", "Walnuts, 4 oz", "Almonds, 4 oz", "Ground flaxseed", "Salsa, low-sodium", "Green tea bags", "Extra virgin olive oil, sesame oil, balsamic or red wine vinegar", "Dried oregano, cinnamon, black pepper (restock only as needed)"]}]}, {"n": 2, "cats": [{"name": "Produce", "items": ["Spinach, 2 lb", "Tomatoes, 7", "Cherry tomatoes, 1 pint", "Cucumbers, 4", "Red onion, 2; yellow onion, 2", "Bell peppers, 3", "Zucchini, 2", "Brussels sprouts, 1 lb", "Sweet potato, 1 medium", "Kale, 1 bunch", "Carrots, 1 lb plus 1 bag baby carrots", "Celery, 1 bunch", "Broccoli, 1 head", "Bok choy, 1 bunch", "Romaine, 1 head", "Cabbage slaw mix, 1 bag", "Avocado, 2", "Apples, 3; pears, 3", "Peaches, 2 (or frozen slices)", "Oranges, 1", "Mixed berries, 2 pints", "Lemons, 4; limes, 2", "Fresh parsley, dill, basil", "Garlic, 1 head; fresh ginger, small piece"]}, {"name": "Protein and Eggs", "items": ["Skinless chicken breast, about 3 lb", "Cod fillet, 1 lb", "Tilapia fillet, 1 lb", "Salmon fillet, 1 lb", "Shrimp, peeled and raw, 1 lb", "Lean ground turkey, 1 lb", "Firm tofu, 14 oz", "Low-sodium sliced turkey breast, 8 oz", "Eggs, 2 dozen", "Egg whites, 32 oz carton", "Canned salmon, no-salt-added, 1 can"]}, {"name": "Dairy", "items": ["Plain nonfat Greek yogurt, 32 oz", "Low-fat milk, 1/2 gallon", "Low-sodium cottage cheese, 16 oz", "Tzatziki, small tub", "Feta cheese, 4 oz", "Part-skim string cheese, 1", "Parmesan, small wedge"]}, {"name": "Grains and Beans", "items": ["Rolled oats, 18 oz container", "Whole-grain bread, 1 loaf", "Whole-grain wraps, 2", "Whole-grain pita, 1", "Whole-grain pasta, 8 oz", "Whole-grain croutons, small bag", "Brown rice, 1 lb", "Quinoa, 12 oz", "Farro, 8 oz", "Dry lentils, 1 lb", "Cannellini beans, no-salt-added, 2 cans", "Black beans, no-salt-added, 1 can", "Chickpeas, no-salt-added, 1 can", "Edamame, frozen unsalted, 1 bag", "Small corn tortillas, 1 pack", "Hummus, 1 small tub"]}, {"name": "Pantry and Other", "items": ["No-salt-added marinara sauce, 1 jar", "No-salt-added diced tomatoes, 1 can", "Low-sodium vegetable or chicken broth, 32 oz", "Low-sodium soy sauce", "Natural peanut butter and almond butter", "Walnuts, 4 oz; almonds, 4 oz", "Chia seeds, small bag", "Ground flaxseed", "Salsa, low-sodium", "Light Caesar dressing", "Mustard; popcorn kernels (for air-popping)", "Extra virgin olive oil, sesame oil, balsamic vinegar", "Green tea bags", "Dried oregano, cinnamon, black pepper (restock only as needed)"]}]}, {"n": 3, "cats": [{"name": "Produce", "items": ["Spinach, 2 lb", "Tomatoes, 5", "Cucumbers, 4", "Yellow onions, 3; red onion, 1", "Bell peppers, 4", "Mushrooms, 12 oz", "Broccoli, 2 heads", "Green beans, 1 lb", "Asparagus, 1 bunch", "Carrots, 2 lb plus 1 bag baby carrots", "Small potatoes, 1 lb; sweet potato, 1 large", "Celery, 1 bunch", "Cabbage or romaine, 1 head", "Avocado, 2", "Apples, 5; pears, 2", "Banana, 2; mango, 2", "Blueberries, 1 pint plus 1 pint mixed berries", "Lemons, 3; limes, 3", "Fresh cilantro, parsley, dill, rosemary, thyme", "Garlic, 1 head"]}, {"name": "Protein and Eggs", "items": ["Skinless chicken breast, about 2.5 lb", "Salmon fillet, 1 lb", "Cod fillet, 1 lb", "Shrimp, peeled and raw, 1 lb", "Lean ground turkey, 1 lb", "Eggs, 2 dozen", "Egg whites, 32 oz carton"]}, {"name": "Dairy", "items": ["Plain nonfat Greek yogurt, 32 oz", "Low-fat milk, 1/2 gallon", "Feta cheese, 4 oz", "Low-fat shredded cheese, 4 oz", "Part-skim string cheese, 2"]}, {"name": "Grains and Beans", "items": ["Rolled oats, 18 oz container", "Whole-grain bread, 1 loaf", "Whole-grain wraps, 2", "Whole-grain buns, 4 (or use lettuce wraps)", "Whole-grain pasta, 8 oz", "Brown rice, 1 lb", "Quinoa, 12 oz", "Wild rice, 4 oz", "Pearl barley, 8 oz", "Dry lentils, 1 lb", "Chickpeas, no-salt-added, 1 can", "Black beans, no-salt-added, 2 cans", "Corn, no-salt-added, 1 can", "Corn tortillas, 1 pack", "Hummus, 1 small tub"]}, {"name": "Pantry and Other", "items": ["No-salt-added diced tomatoes, 1 can", "No-salt-added enchilada sauce, 1 can", "Low-sodium vegetable or chicken broth, 48 oz", "Low-sodium soy sauce", "Almond butter", "Walnuts, 4 oz; almonds, 2 oz", "Ground flaxseed", "Mustard", "Popcorn kernels (for air-popping)", "Extra virgin olive oil, balsamic or red wine vinegar", "Green tea bags", "Dried oregano, cinnamon, black pepper (restock only as needed)"]}]}, {"n": 4, "cats": [{"name": "Produce", "items": ["Spinach, 2 lb", "Tomatoes, 5; cherry tomatoes, 1 pint", "Cucumbers, 4", "Red onion, 2; yellow onion, 2", "Bell peppers, 5", "Zucchini, 2; eggplant, 1", "Broccoli, 2 heads", "Carrots, 1 lb", "Bok choy, 1 bunch", "Cabbage slaw mix, 1 bag", "Corn, 1 ear or 1 cup frozen", "Avocado, 2", "Apples, 3; pears, 2; oranges, 2", "Pineapple, 1 small (or 1 cup canned in juice)", "Mixed berries, 2 pints", "Lemons, 3; limes, 3", "Fresh parsley, cilantro, basil, mint", "Garlic, 1 head; fresh ginger, small piece"]}, {"name": "Protein and Eggs", "items": ["Skinless chicken breast, about 3 lb", "Cod fillet, 1 lb", "Salmon fillet, 1 lb", "Shrimp, peeled and raw, 2 lb", "Lean ground turkey, 1 lb", "Low-sodium sliced turkey breast, 4 oz", "Eggs, 2 dozen", "Egg whites, 32 oz carton", "Canned tuna, no-salt-added, 2 cans"]}, {"name": "Dairy", "items": ["Plain nonfat Greek yogurt, 32 oz", "Low-fat milk, 1 quart", "Low-sodium cottage cheese, 16 oz", "Tzatziki, small tub", "Feta cheese, 4 oz"]}, {"name": "Grains and Beans", "items": ["Rolled oats, 18 oz container", "Whole-grain bread, 1 loaf", "Whole-grain wraps, 2", "Quinoa, 12 oz", "Farro, 8 oz", "Brown rice, 1 lb", "Dry lentils, 1 lb", "White beans, no-salt-added, 1 can", "Chickpeas, no-salt-added, 2 cans", "Black beans, no-salt-added, 1 can", "Small corn tortillas, 1 pack", "Edamame, frozen unsalted, 1 bag", "Hummus, 1 small tub"]}, {"name": "Pantry and Other", "items": ["No-salt-added diced tomatoes, 1 can; no-salt-added tomato sauce, 1 can", "Low-sodium chicken or vegetable broth, 48 oz", "Low-sodium soy sauce", "Light coconut milk, small can", "Tahini, small jar", "Natural peanut butter and almond butter", "Walnuts, 2 oz; almonds, 3 oz", "Chia seeds, small bag", "Salsa, low-sodium", "Ground cumin, curry powder, and dried oregano", "Extra virgin olive oil and balsamic vinegar", "Green tea bags", "Black pepper and cinnamon (restock only as needed)"]}]}], "snacks": [["Apple with natural peanut butter", "1 medium apple and 1 tbsp peanut butter"], ["Baby carrots with hummus", "1 cup carrots and 2 tbsp hummus"], ["Berries with Greek yogurt", "1 cup berries and 1/3 cup plain nonfat Greek yogurt"], ["Almonds with orange", "1 oz almonds and 1 small orange"], ["Hard-boiled eggs with cucumber", "2 eggs and 1/2 cucumber, sliced"], ["Pear with string cheese", "1 pear and 1 part-skim string cheese"], ["Edamame with pepper strips", "1 cup shelled unsalted edamame and 1/2 bell pepper, sliced"], ["Celery with almond butter", "1 celery stalk (2 sticks) and 2 tbsp almond butter"], ["Air-popped popcorn", "3 cups popped, no salt, optional black pepper or cinnamon"], ["Walnuts with apple", "1 oz walnuts and 1 apple"], ["Cucumber with hummus", "1 cup cucumber slices and 2 tbsp hummus"], ["Low-fat milk with berries", "1 cup low-fat milk and 1/2 cup berries"]], "recipes": [{"title": "Breakfasts", "cards": ["<div class=\"card\"><h3>Veggie Egg Scramble<\/h3><div class=\"meta\">Weeks 1 and 3 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>2 whole eggs<\/li><li>2 egg whites<\/li><li>1 large handful spinach<\/li><li>1/4 tomato, diced<\/li><li>2 tbsp onion, diced<\/li><li>1 tsp olive oil<\/li><li>1 slice whole-grain toast<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oil in a nonstick pan over medium heat and cook the onion for 2 minutes.<\/li><li>Add the tomato and spinach and cook until the spinach wilts.<\/li><li>Whisk the eggs and whites, pour into the pan, and stir gently until just set. Serve with toast.<\/li><\/ol>\n<div class=\"var\">Week 3 version: add sliced bell pepper and mushrooms in place of the tomato.<\/div><\/div>", "<div class=\"card\"><h3>Overnight Oats<\/h3><div class=\"meta\">Weeks 1, 3, and 4 · 5 minutes plus overnight<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup rolled oats<\/li><li>1 cup low-fat milk<\/li><li>1 tbsp ground flaxseed<\/li><li>1/2 cup berries<\/li><li>Pinch of cinnamon<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Stir the oats, milk, flax, and cinnamon together in a jar.<\/li><li>Refrigerate overnight, at least 6 hours.<\/li><li>Top with berries before eating.<\/li><\/ol>\n<div class=\"var\">Blueberry version: use blueberries and add 1 tbsp chopped walnuts. Pear version: add a diced pear and 1 tbsp walnuts.<\/div><\/div>", "<div class=\"card\"><h3>Greek Yogurt Bowl<\/h3><div class=\"meta\">Weeks 1 and 2 · 3 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 cup plain nonfat Greek yogurt<\/li><li>1/2 cup berries<\/li><li>1/4 cup rolled oats<\/li><li>1 tbsp walnuts<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Spoon the yogurt into a bowl.<\/li><li>Top with berries, oats, and walnuts.<\/li><\/ol>\n<div class=\"var\">Week 3 parfait: layer the yogurt, oats, and berries in a glass and sprinkle with cinnamon.<\/div><\/div>", "<div class=\"card\"><h3>Egg White and Pepper Omelet<\/h3><div class=\"meta\">Week 1 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>3 egg whites and 1 whole egg<\/li><li>1/4 cup diced bell pepper<\/li><li>2 tbsp diced onion<\/li><li>1 oz feta, crumbled<\/li><li>1 tsp olive oil<\/li><li>1 slice whole-grain toast<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Saute the pepper and onion in the oil for 3 minutes.<\/li><li>Pour in the beaten eggs, let set, and fold in half.<\/li><li>Sprinkle with feta and serve with toast.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Berry-Spinach Smoothie with Eggs<\/h3><div class=\"meta\">Weeks 1 and 3 · 5 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 cup low-fat milk<\/li><li>1 cup spinach<\/li><li>1/2 banana<\/li><li>1/2 cup berries (or 1/2 cup mango in week 3)<\/li><li>1 tbsp ground flaxseed<\/li><li>2 hard-boiled eggs (for eating on the side)<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Blend the milk, spinach, banana, fruit, and flax until smooth.<\/li><li>Pour into a glass and eat the eggs on the side.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Cinnamon Oatmeal<\/h3><div class=\"meta\">Weeks 1 and 3 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup rolled oats<\/li><li>1 cup low-fat milk (or water)<\/li><li>Pinch of cinnamon<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Simmer the oats in the milk for 5 minutes, stirring often.<\/li><li>Stir in cinnamon and your topping of choice.<\/li><\/ol>\n<div class=\"var\">Apple-peanut butter (week 1): 1 chopped apple and 1 tbsp natural peanut butter. Berry-almond (week 3): 1 cup berries and 1 tbsp chopped almonds. Pear-walnut (week 2): 1 diced pear and 1 tbsp walnuts.<\/div><\/div>", "<div class=\"card\"><h3>Veggie Egg Muffins<\/h3><div class=\"meta\">Weeks 1 and 4 · 25 minutes, makes 6 (eat 2)<\/div>\n<h4>Ingredients<\/h4><ul><li>4 eggs and 4 egg whites<\/li><li>1 cup spinach, chopped<\/li><li>1/2 bell pepper, diced<\/li><li>2 tbsp onion, diced<\/li><li>Black pepper and dried oregano<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 350 F and lightly grease a 6-cup muffin tin.<\/li><li>Whisk the eggs and whites with the seasonings, then stir in the vegetables.<\/li><li>Divide among the cups and bake 18 to 20 minutes until set. Refrigerate extras for up to 4 days.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Savory Oatmeal with Poached Egg<\/h3><div class=\"meta\">Weeks 2 and 4 · 15 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup rolled oats cooked in water<\/li><li>1 egg<\/li><li>1 large handful spinach<\/li><li>1/4 tomato, diced<\/li><li>Black pepper<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Cook the oats in water until creamy and transfer to a bowl.<\/li><li>Poach the egg in simmering water for 3 to 4 minutes.<\/li><li>Saute the spinach and tomato, then add to the oats with the egg on top.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Breakfast Burrito<\/h3><div class=\"meta\">Weeks 2 and 4 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 whole-grain wrap<\/li><li>2 eggs, scrambled<\/li><li>1 cup spinach<\/li><li>1/4 cup black beans, rinsed<\/li><li>2 tbsp low-sodium salsa<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Scramble the eggs with spinach until just set.<\/li><li>Warm the wrap and beans, add the eggs and salsa, then roll tightly.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Cottage Cheese Bowl<\/h3><div class=\"meta\">Weeks 2 and 4 · 3 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>3/4 cup low-sodium cottage cheese<\/li><li>1 cup sliced peaches or pineapple<\/li><li>1 tbsp walnuts or almonds<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Spoon cottage cheese into a bowl.<\/li><li>Top with fruit and nuts.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chia Pudding<\/h3><div class=\"meta\">Weeks 2 and 4 · 5 minutes plus 4 hours to set<\/div>\n<h4>Ingredients<\/h4><ul><li>3 tbsp chia seeds<\/li><li>1 cup low-fat milk<\/li><li>1/2 cup berries<\/li><li>Pinch of cinnamon<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Stir the chia seeds, milk, and cinnamon together. Let sit 5 minutes and stir again.<\/li><li>Refrigerate at least 4 hours or overnight.<\/li><li>Top with berries.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Peanut-Banana Toast<\/h3><div class=\"meta\">Week 2 · 5 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 slice whole-grain toast<\/li><li>1 tbsp natural peanut butter<\/li><li>1/2 banana, sliced<\/li><li>2 hard-boiled eggs<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Spread peanut butter on the toast and top with banana slices.<\/li><li>Eat with the eggs on the side.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Tomato and Feta Toast<\/h3><div class=\"meta\">Weeks 2 and 4 · 8 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 slice whole-grain toast<\/li><li>1/2 tomato, sliced<\/li><li>1 oz feta, crumbled<\/li><li>2 scrambled egg whites<\/li><li>Fresh basil and black pepper<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Scramble the egg whites until just set.<\/li><li>Pile the eggs, tomato, and feta onto the toast and top with basil and pepper.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Egg and Vegetable Frittata Square<\/h3><div class=\"meta\">Week 3 · 25 minutes, makes 4 squares<\/div>\n<h4>Ingredients<\/h4><ul><li>2 eggs and 2 egg whites<\/li><li>1/2 bell pepper, diced<\/li><li>2 tbsp onion, diced<\/li><li>1 cup spinach<\/li><li>1 tsp olive oil<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 375 F. Saute the vegetables in the oil in an oven-safe pan.<\/li><li>Pour in the beaten eggs and bake 12 to 15 minutes until set.<\/li><li>Cut into squares and keep extras refrigerated for up to 3 days.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Avocado Egg Toast<\/h3><div class=\"meta\">Week 3 · 8 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 slice whole-grain toast<\/li><li>1/4 avocado, mashed<\/li><li>2 scrambled eggs<\/li><li>1/2 tomato, sliced<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Spread the mashed avocado on the toast.<\/li><li>Top with scrambled eggs and tomato slices.<\/li><\/ol><\/div>"]}, {"title": "Lunches", "cards": ["<div class=\"card\"><h3>Grilled Chicken Spinach Salad<\/h3><div class=\"meta\">Weeks 1 and 4 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz skinless chicken breast<\/li><li>2 large handfuls spinach<\/li><li>1/2 tomato, diced<\/li><li>1/4 cucumber, sliced<\/li><li>1/2 cup chickpeas (or white beans in week 4)<\/li><li>1 tbsp olive oil, 1 tbsp vinegar, lemon<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Season the chicken with black pepper and herbs and grill or pan-cook 5 to 6 minutes per side until cooked through (165 F).<\/li><li>Slice and serve over spinach with the vegetables and beans.<\/li><li>Whisk the oil, vinegar, and lemon and drizzle over the top.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Lentil and Vegetable Soup<\/h3><div class=\"meta\">Weeks 1 and 3 · 40 minutes, makes 4 cups<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup dry lentils, rinsed<\/li><li>1 tsp olive oil<\/li><li>1 onion, 1 carrot, 1 celery stalk, all diced<\/li><li>2 garlic cloves, minced<\/li><li>4 cups low-sodium vegetable broth<\/li><li>1 cup no-salt-added diced tomatoes<\/li><li>1 tsp dried thyme<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Saute the vegetables in the oil for 5 minutes, then add the garlic.<\/li><li>Add the broth, tomatoes, lentils, and thyme. Simmer 25 to 30 minutes until the lentils are tender.<\/li><li>Serve with a side salad. Portion the extra into containers for later.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Tuna Salad Sandwich<\/h3><div class=\"meta\">Weeks 1 and 4 · 5 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 can no-salt-added tuna in water, drained<\/li><li>1 tbsp plain Greek yogurt<\/li><li>1 tsp mustard<\/li><li>1 tbsp diced celery and onion<\/li><li>2 slices whole-grain bread, lettuce, and tomato<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Mix the tuna, yogurt, mustard, and vegetables.<\/li><li>Spread on bread and add lettuce and tomato.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Southwest Bowl<\/h3><div class=\"meta\">Weeks 1, 2, and 3 · 15 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup cooked brown rice<\/li><li>1/2 cup no-salt-added black beans, rinsed<\/li><li>1/2 bell pepper, sliced and sauteed<\/li><li>2 tbsp low-sodium salsa<\/li><li>1/4 avocado, sliced<\/li><li>Lime juice and cilantro<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Layer the rice, beans, and sauteed peppers in a bowl.<\/li><li>Top with salsa, avocado, lime, and cilantro.<\/li><\/ol>\n<div class=\"var\">Chicken version: add 4 oz cooked, sliced chicken breast seasoned with cumin. Shrimp version: add 4 oz shrimp sauteed with garlic and cumin.<\/div><\/div>", "<div class=\"card\"><h3>Turkey and Hummus Wrap<\/h3><div class=\"meta\">Weeks 1 and 4 · 5 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 whole-grain wrap (or whole-grain pita in week 2)<\/li><li>3 oz low-sodium sliced turkey breast<\/li><li>2 tbsp hummus<\/li><li>1 large handful spinach<\/li><li>1/4 bell pepper, sliced<\/li><li>Sprouts and mustard<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Spread hummus across the wrap.<\/li><li>Layer turkey, spinach, pepper, sprouts, and mustard. Roll tightly and cut in half.<\/li><\/ol>\n<div class=\"var\">Chicken and spinach version (week 3): use 3 oz cooked, sliced chicken breast and add shredded carrot and cucumber.<\/div><\/div>", "<div class=\"card\"><h3>Chicken Stir-Fry<\/h3><div class=\"meta\">Week 1 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz skinless chicken breast, sliced thin<\/li><li>1 cup broccoli florets<\/li><li>1/2 cup snap peas<\/li><li>1/2 red bell pepper, sliced<\/li><li>1 garlic clove and 1/2 tsp fresh ginger, minced<\/li><li>1 tbsp low-sodium soy sauce<\/li><li>1 tsp sesame oil<\/li><li>1/2 cup cooked brown rice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the sesame oil in a skillet and cook the chicken until browned and cooked through. Set aside.<\/li><li>Stir-fry the vegetables with garlic and ginger for 4 to 5 minutes.<\/li><li>Return the chicken, add the soy sauce, and serve over rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chickpea and Cucumber Salad<\/h3><div class=\"meta\">Weeks 1, 3, and 4 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>3/4 cup no-salt-added chickpeas, rinsed<\/li><li>1 cucumber, diced<\/li><li>1 tomato, diced<\/li><li>2 tbsp red onion, diced<\/li><li>1 oz feta, crumbled<\/li><li>1 tbsp olive oil, lemon juice, dried oregano<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss all ingredients together in a bowl.<\/li><li>Dress with oil, lemon, and oregano. Serve with a whole-grain pita if you like.<\/li><\/ol>\n<div class=\"var\">Week 3 bowl: add 1/2 cup cooked brown rice and diced bell pepper. Week 4 version: use 1/2 cup cooked quinoa in place of the cucumber-only base.<\/div><\/div>", "<div class=\"card\"><h3>Quinoa Tabbouleh with Chicken<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup cooked quinoa, cooled<\/li><li>4 oz grilled chicken breast, sliced<\/li><li>1/2 cup chopped parsley<\/li><li>1/2 tomato, diced<\/li><li>1/2 cucumber, diced<\/li><li>Juice of 1 lemon and 1 tsp olive oil<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Mix quinoa, parsley, tomato, and cucumber.<\/li><li>Dress with lemon juice and oil, then top with chicken.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>White Bean and Kale Soup<\/h3><div class=\"meta\">Week 2 · 30 minutes, makes 4 cups<\/div>\n<h4>Ingredients<\/h4><ul><li>1 cup no-salt-added cannellini beans, rinsed<\/li><li>1 tsp olive oil<\/li><li>1 onion, diced; 2 garlic cloves, minced<\/li><li>1 carrot, diced<\/li><li>3 cups low-sodium vegetable broth<\/li><li>2 cups chopped kale<\/li><li>1 tsp dried thyme<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Saute the onion, carrot, and garlic in the oil for 5 minutes.<\/li><li>Add the broth, beans, and thyme. Simmer 15 minutes.<\/li><li>Stir in the kale and cook 3 to 4 minutes until wilted.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Salmon Salad<\/h3><div class=\"meta\">Week 2 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1 can no-salt-added salmon, drained and flaked<\/li><li>2 large handfuls mixed greens<\/li><li>1/2 cup cherry tomatoes, halved<\/li><li>1/2 cucumber, sliced<\/li><li>1 tbsp olive oil and 1 tbsp lemon juice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Arrange greens, tomatoes, and cucumber on a plate.<\/li><li>Top with salmon and drizzle with oil and lemon.<\/li><\/ol>\n<div class=\"var\">Week 3 version: serve the salmon over 1/2 cup cooked quinoa with cucumber and herbs.<\/div><\/div>", "<div class=\"card\"><h3>Lentil and Spinach Salad<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>3/4 cup cooked lentils<\/li><li>2 large handfuls spinach<\/li><li>1 carrot, grated<\/li><li>2 tbsp red onion, diced<\/li><li>2 hard-boiled eggs, sliced<\/li><li>1 tsp olive oil and 1 tbsp balsamic vinegar<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss the lentils, spinach, carrot, and onion.<\/li><li>Top with eggs and dress with oil and vinegar.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chicken Caesar-Style Salad<\/h3><div class=\"meta\">Week 2 · 15 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz grilled chicken breast, sliced<\/li><li>3 cups chopped romaine<\/li><li>2 tbsp light Caesar dressing<\/li><li>1 tbsp grated parmesan<\/li><li>1/4 cup whole-grain croutons<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss romaine with dressing.<\/li><li>Top with chicken, parmesan, and croutons.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Egg Salad Sandwich<\/h3><div class=\"meta\">Week 3 · 10 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>2 hard-boiled eggs, chopped<\/li><li>1 tbsp plain Greek yogurt<\/li><li>1 tsp mustard<\/li><li>1 celery stalk, diced<\/li><li>2 slices whole-grain bread, lettuce, and cucumber slices<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Mash the eggs with yogurt and mustard, then stir in celery.<\/li><li>Spread on bread and add lettuce and cucumber.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chicken, Barley, and Vegetable Soup<\/h3><div class=\"meta\">Week 3 · 45 minutes, makes 4 cups<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz skinless chicken breast<\/li><li>1/3 cup pearl barley, rinsed<\/li><li>1 onion, 2 carrots, 1 celery stalk, all diced<\/li><li>1 garlic clove, minced<\/li><li>4 cups low-sodium chicken broth<\/li><li>1 cup spinach<\/li><li>1 tsp dried thyme<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Simmer the chicken, barley, vegetables, garlic, broth, and thyme for 30 minutes.<\/li><li>Shred the chicken, return it to the pot, and stir in spinach until wilted.<\/li><\/ol>\n<div class=\"var\">Week 4 version (chicken vegetable soup): leave out the barley and add 1 cup chopped kale or zucchini instead.<\/div><\/div>", "<div class=\"card\"><h3>Lentil and Quinoa Bowl<\/h3><div class=\"meta\">Week 4 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>1/2 cup cooked lentils<\/li><li>1/2 cup cooked quinoa<\/li><li>1 zucchini and 1/2 bell pepper, chopped and roasted<\/li><li>1 tbsp tahini mixed with 1 tbsp lemon juice and 1 tbsp water<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Roast the vegetables at 425 F for 20 minutes.<\/li><li>Layer lentils, quinoa, and vegetables in a bowl.<\/li><li>Drizzle with the tahini dressing.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Shrimp and Avocado Salad<\/h3><div class=\"meta\">Week 4 · 15 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz cooked shrimp<\/li><li>2 large handfuls greens<\/li><li>2 tbsp corn (or 1/4 cup frozen, thawed)<\/li><li>1/2 cup cherry tomatoes, halved<\/li><li>1/4 avocado, sliced<\/li><li>Juice of 1/2 lime and 1 tsp olive oil<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Arrange greens, corn, and tomatoes on a plate.<\/li><li>Top with shrimp and avocado and dress with lime and oil.<\/li><\/ol><\/div>"]}, {"title": "Dinners", "cards": ["<div class=\"card\"><h3>Baked Salmon with Asparagus<\/h3><div class=\"meta\">Week 1 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz salmon fillet<\/li><li>1 bunch asparagus<\/li><li>1/2 cup cooked brown rice<\/li><li>1 tbsp ground flaxseed<\/li><li>1 tsp olive oil, lemon, dill<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Place salmon and asparagus on a sheet pan, drizzle with oil and lemon, and add dill.<\/li><li>Bake 12 to 15 minutes until the salmon flakes easily.<\/li><li>Serve with rice and sprinkle flax over the vegetables.<\/li><\/ol>\n<div class=\"var\">Week 3 version (lemon-dill salmon): serve with 1/2 cup wild rice and green beans in place of asparagus.<\/div><\/div>", "<div class=\"card\"><h3>Herb-Roasted Chicken Breast<\/h3><div class=\"meta\">Weeks 1 and 3 · 30 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz skinless chicken breast<\/li><li>1 tsp olive oil<\/li><li>1 garlic clove, minced<\/li><li>1 tsp dried rosemary or thyme<\/li><li>1 cup broccoli or carrots<\/li><li>1/2 cup cooked quinoa or small potatoes<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Rub the chicken with oil, garlic, and herbs.<\/li><li>Roast chicken and vegetables together for 20 to 25 minutes until the chicken reaches 165 F.<\/li><li>Serve with quinoa or potatoes.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Baked Cod<\/h3><div class=\"meta\">Weeks 1, 3, and 4 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz cod fillet<\/li><li>1 tsp olive oil and 1 garlic clove<\/li><li>1/2 cup no-salt-added diced tomatoes or cherry tomatoes<\/li><li>1 tsp dried oregano<\/li><li>1 cup green beans<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Place cod in a baking dish and top with tomatoes, garlic, and oregano.<\/li><li>Bake 12 to 15 minutes until flaky.<\/li><li>Serve with steamed green beans and 1/2 cup whole-grain pasta or farro.<\/li><\/ol>\n<div class=\"var\">Week 3 mango salsa version: skip the tomato and top with 1/2 cup diced mango, red onion, lime, and cilantro. Serve with 1/2 cup quinoa and asparagus. Week 4 olive version: add 6 sliced olives.<\/div><\/div>", "<div class=\"card\"><h3>Lean Turkey and Bean Chili<\/h3><div class=\"meta\">Week 1 · 40 minutes, makes 4 servings<\/div>\n<h4>Ingredients<\/h4><ul><li>1 lb lean ground turkey<\/li><li>1 onion and 1 bell pepper, diced<\/li><li>2 garlic cloves, minced<\/li><li>1 can no-salt-added kidney beans, rinsed<\/li><li>1 can no-salt-added diced tomatoes<\/li><li>2 tbsp chili powder, 1 tsp cumin<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Brown the turkey with onion and pepper, drain any fat, and add the garlic and spices.<\/li><li>Add tomatoes and beans. Simmer 25 minutes.<\/li><li>Portion one serving and top with 1 tbsp plain Greek yogurt.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Shrimp and Vegetable Skewers<\/h3><div class=\"meta\">Week 1 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz raw shrimp, peeled<\/li><li>1/2 zucchini, cut in chunks<\/li><li>1/2 bell pepper, cut in chunks<\/li><li>1/4 red onion, cut in chunks<\/li><li>1 tsp olive oil, garlic, lemon, oregano<\/li><li>1/2 cup cooked wild rice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss shrimp and vegetables in oil, garlic, lemon, and oregano.<\/li><li>Thread onto skewers and grill or broil 2 to 3 minutes per side until the shrimp are pink.<\/li><li>Serve over wild rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chicken Fajita Bowl<\/h3><div class=\"meta\">Week 1 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz skinless chicken breast, sliced<\/li><li>1/2 bell pepper and 1/4 onion, sliced<\/li><li>1/2 cup no-salt-added black beans<\/li><li>1/2 cup cooked brown rice<\/li><li>2 tbsp low-sodium salsa<\/li><li>1/4 avocado, sliced<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Season chicken with cumin and chili powder and cook in a skillet until done.<\/li><li>Saute the peppers and onion until tender.<\/li><li>Layer rice, beans, chicken, and vegetables, then top with salsa and avocado.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Mushroom and Lentil Stew<\/h3><div class=\"meta\">Week 1 · 45 minutes, makes 4 servings<\/div>\n<h4>Ingredients<\/h4><ul><li>1 cup dry lentils, rinsed<\/li><li>1 tsp olive oil<\/li><li>8 oz mushrooms, sliced<\/li><li>1 onion, 2 carrots, diced<\/li><li>2 garlic cloves, minced<\/li><li>4 cups low-sodium vegetable broth<\/li><li>1 tsp dried thyme<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Saute mushrooms, onion, and carrots in oil until browned, then add garlic.<\/li><li>Add lentils, broth, and thyme. Simmer 30 minutes until lentils are tender.<\/li><li>Serve one portion with a small baked potato.<\/li><\/ol>\n<div class=\"var\">Week 3 version (lentil and mushroom bolognese): simmer the stew a bit longer, then serve over 1/2 cup whole-grain pasta with a side salad.<\/div><\/div>", "<div class=\"card\"><h3>Greek Chicken Plate<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz skinless chicken breast<\/li><li>1 tsp olive oil, lemon, dried oregano, garlic<\/li><li>1/2 cup cooked quinoa<\/li><li>1 cucumber and 1 tomato, diced<\/li><li>1 tbsp tzatziki<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Marinate the chicken in oil, lemon, oregano, and garlic for 15 minutes.<\/li><li>Grill or pan-cook until done. Slice.<\/li><li>Serve with quinoa, cucumber-tomato salad, and tzatziki.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Cod and Vegetable Foil Packets<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz cod fillet<\/li><li>1/2 zucchini, sliced<\/li><li>1/2 tomato, sliced<\/li><li>1/4 onion, sliced<\/li><li>1 tsp olive oil, garlic, herbs<\/li><li>1/2 cup cooked farro<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Place cod and vegetables on foil, drizzle with oil, and season.<\/li><li>Fold into sealed packets and bake 15 to 18 minutes.<\/li><li>Serve with farro.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Lean Turkey Meatballs<\/h3><div class=\"meta\">Week 2 · 30 minutes, makes 12 meatballs (3 per serving)<\/div>\n<h4>Ingredients<\/h4><ul><li>1 lb lean ground turkey<\/li><li>1/4 cup rolled oats<\/li><li>1 egg white<\/li><li>1 garlic clove, minced; 1 tsp dried oregano<\/li><li>1 cup no-salt-added marinara sauce<\/li><li>1/2 cup cooked whole-grain pasta and side salad<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Mix turkey, oats, egg white, garlic, and oregano, then form 12 meatballs.<\/li><li>Bake 18 to 20 minutes until cooked through.<\/li><li>Warm the marinara and toss meatballs in it. Serve with pasta and salad.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Salmon Poke-Style Bowl<\/h3><div class=\"meta\">Week 2 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz cooked salmon, cubed<\/li><li>1/2 cup cooked brown rice<\/li><li>1/2 cup shelled edamame<\/li><li>1/2 cucumber, sliced<\/li><li>1/4 avocado, sliced<\/li><li>1 tsp low-sodium soy sauce and 1 tsp sesame oil<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss the salmon with soy sauce and sesame oil.<\/li><li>Arrange rice, edamame, cucumber, and avocado in a bowl.<\/li><li>Top with salmon.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Tofu and Vegetable Stir-Fry<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz firm tofu, pressed and cubed<\/li><li>1 cup broccoli florets<\/li><li>1/2 red bell pepper, sliced<\/li><li>1 garlic clove and 1/2 tsp fresh ginger, minced<\/li><li>1 tsp sesame oil<\/li><li>1 tbsp low-sodium soy sauce<\/li><li>1/2 cup cooked brown rice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Pan-fry tofu in sesame oil until golden on all sides. Set aside.<\/li><li>Stir-fry vegetables with garlic and ginger for 4 to 5 minutes.<\/li><li>Return tofu, add soy sauce, and serve over rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Chicken and White Bean Soup<\/h3><div class=\"meta\">Week 2 · 35 minutes, makes 4 cups<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz skinless chicken breast<\/li><li>1/2 cup no-salt-added cannellini beans<\/li><li>1 onion, 1 carrot, diced<\/li><li>2 garlic cloves, minced<\/li><li>3 cups low-sodium chicken broth<\/li><li>2 cups chopped kale<\/li><li>1 tsp dried thyme<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Simmer chicken in broth with the vegetables, garlic, and thyme for 20 minutes.<\/li><li>Remove chicken, shred it, and return it to the pot with beans and kale.<\/li><li>Simmer 5 more minutes. Serve with 1 slice whole-grain bread.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Baked Tilapia with Lemon and Dill<\/h3><div class=\"meta\">Week 2 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz tilapia fillet<\/li><li>1 tsp olive oil and lemon juice<\/li><li>1 tsp fresh dill<\/li><li>1 cup Brussels sprouts, halved<\/li><li>1/2 cup cubed sweet potato<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 400 F. Roast the sprouts and sweet potato with 1/2 tsp oil for 15 minutes.<\/li><li>Place tilapia on a baking sheet, drizzle with oil and lemon, and top with dill.<\/li><li>Bake 10 to 12 minutes until flaky. Serve with the vegetables.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Shrimp and Broccoli Stir-Fry<\/h3><div class=\"meta\">Week 3 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz raw shrimp, peeled<\/li><li>1 cup broccoli florets<\/li><li>1 red bell pepper, sliced<\/li><li>1 garlic clove, minced<\/li><li>1 tsp sesame oil<\/li><li>1 tbsp low-sodium soy sauce<\/li><li>1/2 cup cooked brown rice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oil and stir-fry the broccoli and pepper for 4 minutes.<\/li><li>Add garlic and shrimp and cook 2 to 3 minutes until pink.<\/li><li>Add soy sauce and serve over rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Black Bean Enchilada Bake<\/h3><div class=\"meta\">Week 3 · 40 minutes, makes 4 servings<\/div>\n<h4>Ingredients<\/h4><ul><li>4 corn tortillas<\/li><li>1 can no-salt-added black beans, rinsed<\/li><li>1 bell pepper, diced<\/li><li>1 cup no-salt-added enchilada sauce<\/li><li>1 oz low-fat shredded cheese<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 375 F. Saute the pepper and mash half the beans.<\/li><li>Layer tortillas, beans, pepper, and sauce in a dish. Top with cheese.<\/li><li>Bake 20 minutes. Cut into 4 portions.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Lean Turkey Burgers<\/h3><div class=\"meta\">Week 3 · 20 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>4 oz lean ground turkey<\/li><li>1 tbsp finely chopped onion<\/li><li>Dried garlic powder, paprika, black pepper<\/li><li>1 whole-grain bun and lettuce and tomato<\/li><li>1 small sweet potato, cut in wedges<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 425 F. Roast sweet potato wedges for 20 minutes, turning once.<\/li><li>Form the turkey and onion into a patty seasoned with spices. Cook in a skillet 4 to 5 minutes per side until 165 F.<\/li><li>Serve on a bun with vegetables and the wedges.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Turkey and Vegetable Stuffed Peppers<\/h3><div class=\"meta\">Week 4 · 45 minutes, makes 2 servings<\/div>\n<h4>Ingredients<\/h4><ul><li>2 bell peppers, tops cut off and seeds removed<\/li><li>4 oz lean ground turkey<\/li><li>1/2 cup cooked brown rice<\/li><li>1/2 cup no-salt-added diced tomatoes<\/li><li>1/4 onion, diced; 1 tsp dried oregano and cumin<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Heat the oven to 375 F. Brown the turkey with the onion and spices.<\/li><li>Stir in rice and tomatoes. Fill the peppers.<\/li><li>Bake covered for 30 minutes. Serve one pepper per serving.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Shrimp Tacos<\/h3><div class=\"meta\">Week 4 · 15 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz raw shrimp, peeled<\/li><li>2 small corn tortillas<\/li><li>1/2 cup cabbage slaw mix<\/li><li>1/4 avocado, sliced<\/li><li>1 tsp cumin and 1 tsp olive oil<\/li><li>Lime juice and cilantro<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Toss shrimp with cumin and oil and cook 2 to 3 minutes per side until pink.<\/li><li>Warm the tortillas and fill with shrimp, slaw, and avocado.<\/li><li>Finish with lime and cilantro.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Salmon with Ginger-Garlic Glaze<\/h3><div class=\"meta\">Week 4 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz salmon fillet<\/li><li>1 tsp low-sodium soy sauce<\/li><li>1 tsp honey (optional)<\/li><li>1 garlic clove and 1/2 tsp fresh ginger, minced<\/li><li>1 cup bok choy, halved<\/li><li>1/2 cup cooked brown rice<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Mix soy sauce, honey, garlic, and ginger. Brush over salmon.<\/li><li>Bake at 400 F for 12 to 14 minutes. Steam the bok choy 3 to 4 minutes.<\/li><li>Serve with rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Eggplant and Chickpea Curry<\/h3><div class=\"meta\">Week 4 · 35 minutes, makes 2 servings<\/div>\n<h4>Ingredients<\/h4><ul><li>1 small eggplant, cubed<\/li><li>1/2 cup no-salt-added chickpeas, rinsed<\/li><li>1/4 onion, diced; 1 garlic clove, minced<\/li><li>1/2 cup no-salt-added diced tomatoes<\/li><li>1 tbsp light coconut milk<\/li><li>1 tsp curry powder and 1 tsp olive oil<\/li><li>1/2 cup cooked brown rice per serving<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Saute onion and garlic in oil. Add eggplant and curry powder and cook 5 minutes.<\/li><li>Add tomatoes and chickpeas. Simmer 15 minutes until the eggplant is tender.<\/li><li>Stir in coconut milk and serve over rice.<\/li><\/ol><\/div>", "<div class=\"card\"><h3>Grilled Chicken Kebabs<\/h3><div class=\"meta\">Week 4 · 25 minutes<\/div>\n<h4>Ingredients<\/h4><ul><li>5 oz skinless chicken breast, cubed<\/li><li>1/2 bell pepper, 1/2 zucchini, 1/4 red onion, cut in chunks<\/li><li>1 tsp olive oil, lemon, oregano<\/li><li>1/2 cup cooked brown rice<\/li><li>1 tbsp tzatziki<\/li><\/ul>\n<h4>Method<\/h4><ol><li>Marinate chicken in oil, lemon, and oregano for 15 minutes.<\/li><li>Thread chicken and vegetables onto skewers and grill 10 to 12 minutes, turning often, until the chicken reaches 165 F.<\/li><li>Serve over rice with tzatziki.<\/li><\/ol><\/div>"]}]};
+
+const MEAL_LABELS = { B: 'Breakfast', L: 'Lunch', S: 'Snack', D: 'Dinner' };
+const MEAL_ORDER = ['B', 'L', 'S', 'D'];
+const WEEKDAY_TO_INDEX = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 0: 6 }; // JS getDay() -> Mon=0 ... Sun=6
+
+const store = {
+  get(k, d) {
+    try { const v = localStorage.getItem('mealplan1:' + k); return v === null ? d : JSON.parse(v); }
+    catch (e) { return d; }
+  },
+  set(k, v) {
+    try { localStorage.setItem('mealplan1:' + k, JSON.stringify(v)); } catch (e) {}
+  }
+};
+
+let state = {
+  tab: 'today',
+  week: store.get('week', 1),
+  dayIndex: store.get('dayIndex', 0),
+  shopWeek: null
+};
+state.shopWeek = state.week;
+
+function el(tag, attrs, children) {
+  const n = document.createElement(tag);
+  if (attrs) for (const k in attrs) {
+    if (k === 'class') n.className = attrs[k];
+    else if (k === 'text') n.textContent = attrs[k];
+    else n.setAttribute(k, attrs[k]);
+  }
+  (children || []).forEach(c => n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+  return n;
+}
+
+function setTab(name) {
+  state.tab = name;
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  ['today', 'week', 'shop', 'recipes'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('hidden', t !== name);
+  });
+  render();
+  window.scrollTo(0, 0);
+}
+
+function setWeek(n) {
+  state.week = n;
+  state.shopWeek = n;
+  store.set('week', n);
+  render();
+}
+
+function renderWeekButtons() {
+  const wrap = document.getElementById('weekButtons');
+  wrap.innerHTML = '';
+  [1, 2, 3, 4].forEach(n => {
+    const b = el('button', { text: 'Week ' + n });
+    if (n === state.week) b.classList.add('active');
+    b.addEventListener('click', () => setWeek(n));
+    wrap.appendChild(b);
+  });
+}
+
+function mealKey(w, d, t) { return 'm-' + w + '-' + d + '-' + t; }
+
+function mealCheckbox(w, d, t, text) {
+  const key = mealKey(w, d, t);
+  const checked = store.get(key, false);
+  const box = el('input', { type: 'checkbox' });
+  box.checked = checked;
+  const wrap = el('div', { class: 'meal' + (checked ? ' done' : '') }, [
+    el('div', { class: 'label', text: MEAL_LABELS[t] }),
+    el('label', { class: 'item' + (checked ? ' done' : '') }, [
+      box,
+      el('span', { class: 'text', text: text })
+    ])
+  ]);
+  box.addEventListener('change', () => {
+    store.set(key, box.checked);
+    wrap.classList.toggle('done', box.checked);
+    wrap.querySelector('.item').classList.toggle('done', box.checked);
+    renderProgress();
+  });
+  return wrap;
+}
+
+function countMeals(w) {
+  let total = 0, done = 0;
+  const week = PLAN.weeks.find(x => x.n === w);
+  week.days.forEach((day, di) => MEAL_ORDER.forEach(t => {
+    total++;
+    if (store.get(mealKey(w, di, t), false)) done++;
+  }));
+  return { done, total };
+}
+
+function progressBox(label, done, total) {
+  const pct = total ? Math.round(done / total * 100) : 0;
+  return [
+    el('div', { text: label + ': ' + done + ' of ' + total + ' done' }),
+    el('div', { class: 'bar' }, [el('div', { style: 'width:' + pct + '%' })])
+  ];
+}
+
+function renderToday() {
+  const today = new Date();
+  const dIdx = WEEKDAY_TO_INDEX[today.getDay()];
+  const week = PLAN.weeks.find(x => x.n === state.week);
+  const day = week.days[dIdx];
+  const dayName = day.day;
+  document.getElementById('todayTitle').textContent = 'Today: ' + dayName + ', Week ' + state.week;
+  document.getElementById('todayNote').textContent = 'Showing the plan for the day of the week you are on. Change the week above if you are on a different week of the plan.';
+  const list = document.getElementById('todayMeals');
+  list.innerHTML = '';
+  MEAL_ORDER.forEach(t => list.appendChild(mealCheckbox(state.week, dIdx, t, day[t])));
+  const done = MEAL_ORDER.filter(t => store.get(mealKey(state.week, dIdx, t), false)).length;
+  const p = document.getElementById('todayProgress');
+  p.innerHTML = '';
+  progressBox("Today's meals", done, 4).forEach(n => p.appendChild(n));
+}
+
+function renderDayChips() {
+  const wrap = document.getElementById('dayChips');
+  wrap.innerHTML = '';
+  const week = PLAN.weeks.find(x => x.n === state.week);
+  week.days.forEach((day, i) => {
+    const b = el('button', { text: day.day });
+    if (i === state.dayIndex) b.classList.add('active');
+    b.addEventListener('click', () => { state.dayIndex = i; store.set('dayIndex', i); renderWeek(); });
+    wrap.appendChild(b);
+  });
+}
+
+function renderWeek() {
+  renderDayChips();
+  const week = PLAN.weeks.find(x => x.n === state.week);
+  const day = week.days[state.dayIndex];
+  const list = document.getElementById('weekMeals');
+  list.innerHTML = '';
+  MEAL_ORDER.forEach(t => list.appendChild(mealCheckbox(state.week, state.dayIndex, t, day[t])));
+  renderProgress();
+}
+
+function renderProgress() {
+  const wp = document.getElementById('weekProgress');
+  wp.innerHTML = '';
+  const c = countMeals(state.week);
+  progressBox('Week ' + state.week + ' meals', c.done, c.total).forEach(n => wp.appendChild(n));
+
+  const sp = document.getElementById('shopProgress');
+  sp.innerHTML = '';
+  const s = countShop(state.shopWeek);
+  progressBox('Week ' + state.shopWeek + ' shopping', s.done, s.total).forEach(n => sp.appendChild(n));
+}
+
+document.getElementById('clearWeekMeals').addEventListener('click', () => {
+  if (!confirm('Clear all meal checkmarks for Week ' + state.week + '?')) return;
+  PLAN.weeks.find(x => x.n === state.week).days.forEach((d, di) => MEAL_ORDER.forEach(t => store.set(mealKey(state.week, di, t), false)));
+  render();
+});
+
+function shopKey(w, ci, ii) { return 's-' + w + '-' + ci + '-' + ii; }
+
+function countShop(w) {
+  let total = 0, done = 0;
+  const sw = PLAN.shopping.find(x => x.n === w);
+  sw.cats.forEach((c, ci) => c.items.forEach((_, ii) => {
+    total++;
+    if (store.get(shopKey(w, ci, ii), false)) done++;
+  }));
+  return { done, total };
+}
+
+function renderShop() {
+  const wrap = document.getElementById('shopTitle');
+  wrap.textContent = 'Shopping: Week ' + state.shopWeek;
+  const list = document.getElementById('shopList');
+  list.innerHTML = '';
+  const sw = PLAN.shopping.find(x => x.n === state.shopWeek);
+  sw.cats.forEach((c, ci) => {
+    const cat = el('div', { class: 'cat' }, [el('h3', { text: c.name })]);
+    c.items.forEach((item, ii) => {
+      const key = shopKey(state.shopWeek, ci, ii);
+      const checked = store.get(key, false);
+      const box = el('input', { type: 'checkbox' });
+      box.checked = checked;
+      const label = el('label', { class: 'item' + (checked ? ' done' : '') }, [box, el('span', { text: item })]);
+      box.addEventListener('change', () => {
+        store.set(key, box.checked);
+        label.classList.toggle('done', box.checked);
+        renderProgress();
+      });
+      cat.appendChild(label);
+    });
+    list.appendChild(cat);
+  });
+}
+
+document.getElementById('clearShop').addEventListener('click', () => {
+  if (!confirm('Clear all shopping checkmarks for Week ' + state.shopWeek + '?')) return;
+  const sw = PLAN.shopping.find(x => x.n === state.shopWeek);
+  sw.cats.forEach((c, ci) => c.items.forEach((_, ii) => store.set(shopKey(state.shopWeek, ci, ii), false)));
+  render();
+});
+
+function renderRecipes() {
+  const q = document.getElementById('recipeSearch').value.trim().toLowerCase();
+  const list = document.getElementById('recipeList');
+  list.innerHTML = '';
+  PLAN.recipes.forEach(sec => {
+    const cards = sec.cards.filter(html => {
+      if (!q) return true;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      return tmp.textContent.toLowerCase().includes(q);
+    });
+    if (!cards.length) return;
+    list.appendChild(el('h3', { class: 'section', text: sec.title }));
+    cards.forEach(html => {
+      const holder = document.createElement('div');
+      holder.innerHTML = html;
+      list.appendChild(holder.firstElementChild);
+    });
+  });
+  if (!list.children.length) list.appendChild(el('p', { class: 'note', text: 'No recipes match that search.' }));
+}
+
+function renderSnacks() {
+  const t = document.getElementById('snackTable');
+  if (t.children.length) return;
+  PLAN.snacks.forEach(([a, b]) => t.appendChild(el('tr', null, [el('td', { text: a }), el('td', { text: b })])));
+}
+
+function render() {
+  renderWeekButtons();
+  if (state.tab === 'today') renderToday();
+  if (state.tab === 'week') renderWeek();
+  if (state.tab === 'shop') { state.shopWeek = state.week; renderShop(); renderProgress(); }
+  if (state.tab === 'recipes') { renderRecipes(); renderSnacks(); }
+}
+
+document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+document.getElementById('recipeSearch').addEventListener('input', renderRecipes);
+
+function updateClock() {
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+const darkToggle = document.getElementById('darkToggle');
+function applyTheme(dark) {
+  document.body.classList.toggle('dark', dark);
+  darkToggle.checked = dark;
+  store.set('theme', dark ? 'dark' : 'light');
+}
+darkToggle.addEventListener('change', () => applyTheme(darkToggle.checked));
+applyTheme(store.get('theme', 'light') === 'dark');
+
+render();
+</script>
+</body>
+</html>
